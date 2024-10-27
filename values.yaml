@@ -1,0 +1,86 @@
+config:
+  cluster:
+    enabled: true
+    port: 6222
+    replicas: 3
+    routeURLs:
+      useFQDN: false
+      k8sClusterDomain: cluster.local
+      routes:
+        - nats://nats-0.nats-headless.infra.svc.cluster.local:6222
+        - nats://nats-1.nats-headless.infra.svc.cluster.local:6222
+        - nats://nats-2.nats-headless.infra.svc.cluster.local:6222
+    user: testuser
+    password: t2e3d43
+
+  websocket:
+    enabled: true
+    port: 8085
+    tls:
+      enabled: false
+      # set secretName in order to mount an existing secret to dir
+      secretName:
+      dir: /etc/nats-certs/websocket
+      cert: tls.crt
+      key: tls.key
+      # merge or patch the tls config
+      # https://docs.nats.io/running-a-nats-service/configuration/securing_nats/tls
+      merge: {}
+      patch: []
+
+    ingress:
+      name: "nats-ingress"
+      enabled: true
+      hosts: 
+        - "nats.local"
+      path: /
+      pathType: Exact
+      className: nginx
+      tlsSecretName: false
+
+  merge:
+    accounts:
+      $SYS:
+        users:
+        - {user: admin, password: password}
+
+  jetstream:
+    enabled: true
+
+    fileStore:
+      enabled: true
+      dir: /data
+
+      ############################################################
+      # stateful set -> volume claim templates -> jetstream pvc
+      ############################################################
+      pvc:
+        enabled: true
+        size: 2Gi
+        storageClassName:
+
+
+service:
+  enabled: true
+  merge:
+    spec:
+      type: LoadBalancer
+
+  # service port options
+  ports:
+    nats:
+      enabled: true
+    leafnodes:
+      enabled: true
+    websocket:
+      enabled: true
+    mqtt:
+      enabled: true
+    cluster:
+      enabled: true
+    gateway:
+      enabled: false
+    monitor:
+      enabled: true
+    profiling:
+      enabled: false
